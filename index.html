@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品管理系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 头部 -->
+        <header class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-4">商品管理系统</h1>
+            <div class="flex flex-col sm:flex-row gap-4">
+                <div class="flex-1">
+                    <div class="relative">
+                        <input
+                            type="text"
+                            id="searchInput"
+                            placeholder="搜索商品名称..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                        <i class="fas fa-search absolute right-3 top-3 text-gray-400"></i>
+                    </div>
+                </div>
+                <button
+                    id="addProductBtn"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                >
+                    <i class="fas fa-plus"></i>
+                    添加商品
+                </button>
+            </div>
+        </header>
+
+        <!-- 商品列表 -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-200">
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">ID</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">商品名称</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">分类</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">价格</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">库存</th>
+                            <th class="text-left py-3 px-4 font-semibold text-gray-700">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="productTableBody">
+                        <!-- 商品数据将通过 JavaScript 动态插入 -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 分页 -->
+            <div class="flex justify-between items-center mt-6">
+                <div class="text-sm text-gray-600">
+                    显示 <span id="startItem">1</span> 到 <span id="endItem">5</span> 条，共 <span id="totalItems">0</span> 条
+                </div>
+                <div class="flex gap-2">
+                    <button id="prevPage" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                        上一页
+                    </button>
+                    <div id="pageNumbers" class="flex gap-1">
+                        <!-- 页码将通过 JavaScript 动态插入 -->
+                    </div>
+                    <button id="nextPage" class="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed">
+                        下一页
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 添加/编辑商品弹窗 -->
+    <div id="productModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+                <h2 id="modalTitle" class="text-xl font-bold mb-4">添加商品</h2>
+                <form id="productForm">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">商品名称</label>
+                        <input
+                            type="text"
+                            id="productName"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">分类</label>
+                        <input
+                            type="text"
+                            id="productCategory"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">价格</label>
+                        <input
+                            type="number"
+                            id="productPrice"
+                            step="0.01"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">库存</label>
+                        <input
+                            type="number"
+                            id="productStock"
+                            required
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div class="flex gap-3">
+                        <button
+                            type="submit"
+                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition-colors"
+                        >
+                            保存
+                        </button>
+                        <button
+                            type="button"
+                            id="closeModal"
+                            class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded-lg transition-colors"
+                        >
+                            取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认弹窗 -->
+    <div id="deleteModal" class="modal">
+        <div class="bg-white rounded-lg shadow-xl max-w-sm w-full mx-4">
+            <div class="p-6">
+                <h2 class="text-xl font-bold mb-4">确认删除</h2>
+                <p class="text-gray-600 mb-6">您确定要删除商品 "<span id="deleteProductName"></span>" 吗？此操作无法撤销。</p>
+                <div class="flex gap-3">
+                    <button
+                        id="confirmDelete"
+                        class="flex-1 bg-red-500 hover:bg-red-600 text-white py-2 rounded-lg transition-colors"
+                    >
+                        删除
+                    </button>
+                    <button
+                        id="cancelDelete"
+                        class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 rounded-lg transition-colors"
+                    >
+                        取消
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始商品数据
+        let products = [
+            { id: 1, name: "苹果手机", category: "电子产品", price: 6999, stock: 50 },
+            { id: 2, name: "笔记本电脑", category: "电子产品", price: 5999, stock: 30 },
+            { id: 3, name: "运动鞋", category: "服装鞋帽", price: 599, stock: 100 },
+            { id: 4, name: "篮球", category: "运动器材", price: 199, stock: 80 },
+            { id: 5, name: "咖啡机", category: "家用电器", price: 1299, stock: 25 }
+        ];
+
+        // 分页相关变量
+        let currentPage = 1;
+        const itemsPerPage = 5;
+        let filteredProducts = [...products];
+        let editingProduct = null;
+
+        // DOM 元素
+        const productTableBody = document.getElementById('productTableBody');
+        const searchInput = document.getElementById('searchInput');
+        const addProductBtn = document.getElementById('addProductBtn');
+        const productModal = document.getElementById('productModal');
+        const deleteModal = document.getElementById('deleteModal');
+        const productForm = document.getElementById('productForm');
+        const closeModal = document.getElementById('closeModal');
+        const confirmDelete = document.getElementById('confirmDelete');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const prevPage = document.getElementById('prevPage');
+        const nextPage = document.getElementById('nextPage');
+        const pageNumbers = document.getElementById('pageNumbers');
+        const modalTitle = document.getElementById('modalTitle');
+
+        // 渲染商品列表
+        function renderProducts() {
+            const start = (currentPage - 1) * itemsPerPage;
+            const end = start + itemsPerPage;
+            const paginatedProducts = filteredProducts.slice(start, end);
+
+            productTableBody.innerHTML = '';
+
+            paginatedProducts.forEach(product => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-200 hover:bg-gray-50';
+                row.innerHTML = `
+                    <td class="py-3 px-4">${product.id}</td>
+                    <td class="py-3 px-4">${product.name}</td>
+                    <td class="py-3 px-4">${product.category}</td>
+                    <td class="py-3 px-4">¥${product.price.toFixed(2)}</td>
+                    <td class="py-3 px-4">${product.stock}</td>
+                    <td class="py-3 px-4">
+                        <button
+                            onclick="editProduct(${product.id})"
+                            class="text-blue-500 hover:text-blue-700 mr-3"
+                        >
+                            <i class="fas fa-edit"></i> 编辑
+                        </button>
+                        <button
+                            onclick="deleteProduct(${product.id})"
+                            class="text-red-500 hover:text-red-700"
+                        >
+                            <i class="fas fa-trash"></i> 删除
+                        </button>
+                    </td>
+                `;
+                productTableBody.appendChild(row);
+            });
+
+            // 更新分页信息
+            updatePagination();
+        }
+
+        // 更新分页信息
+        function updatePagination() {
+            const totalItems = filteredProducts.length;
+            const totalPages = Math.ceil(totalItems / itemsPerPage);
+            const start = (currentPage - 1) * itemsPerPage + 1;
+            const end = Math.min(currentPage * itemsPerPage, totalItems);
+
+            document.getElementById('startItem').textContent = totalItems > 0 ? start : 0;
+            document.getElementById('endItem').textContent = end;
+            document.getElementById('totalItems').textContent = totalItems;
+
+            // 更新页码按钮
+            pageNumbers.innerHTML = '';
+            for (let i = 1; i <= totalPages; i++) {
+                const button = document.createElement('button');
+                button.textContent = i;
+                button.className = `px-3 py-1 border rounded ${
+                    currentPage === i
+                        ? 'bg-blue-500 text-white'
+                        : 'border-gray-300 hover:bg-gray-100'
+                }`;
+                button.onclick = () => {
+                    currentPage = i;
+                    renderProducts();
+                };
+                pageNumbers.appendChild(button);
+            }
+
+            // 更新上一页/下一页按钮状态
+            prevPage.disabled = currentPage === 1;
+            nextPage.disabled = currentPage === totalPages || totalPages === 0;
+        }
+
+        // 搜索功能
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            filteredProducts = products.filter(product =>
+                product.name.toLowerCase().includes(searchTerm)
+            );
+            currentPage = 1;
+            renderProducts();
+        });
+
+        // 添加商品
+        addProductBtn.addEventListener('click', () => {
+            editingProduct = null;
+            modalTitle.textContent = '添加商品';
+            productForm.reset();
+            productModal.classList.add('show');
+        });
+
+        // 编辑商品
+        function editProduct(id) {
+            editingProduct = products.find(p => p.id === id);
+            modalTitle.textContent = '编辑商品';
+            document.getElementById('productName').value = editingProduct.name;
+            document.getElementById('productCategory').value = editingProduct.category;
+            document.getElementById('productPrice').value = editingProduct.price;
+            document.getElementById('productStock').value = editingProduct.stock;
+            productModal.classList.add('show');
+        }
+
+        // 删除商品
+        function deleteProduct(id) {
+            const product = products.find(p => p.id === id);
+            document.getElementById('deleteProductName').textContent = product.name;
+            deleteModal.classList.add('show');
+
+            confirmDelete.onclick = () => {
+                products = products.filter(p => p.id !== id);
+                filteredProducts = [...products];
+                deleteModal.classList.remove('show');
+
+                // 重新计算当前页
+                const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+                if (currentPage > totalPages && totalPages > 0) {
+                    currentPage = totalPages;
+                }
+
+                renderProducts();
+            };
+        }
+
+        // 关闭弹窗
+        closeModal.addEventListener('click', () => {
+            productModal.classList.remove('show');
+        });
+
+        cancelDelete.addEventListener('click', () => {
+            deleteModal.classList.remove('show');
+        });
+
+        // 点击弹窗外部关闭
+        productModal.addEventListener('click', (e) => {
+            if (e.target === productModal) {
+                productModal.classList.remove('show');
+            }
+        });
+
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) {
+                deleteModal.classList.remove('show');
+            }
+        });
+
+        // 表单提交
+        productForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const name = document.getElementById('productName').value;
+            const category = document.getElementById('productCategory').value;
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+
+            if (editingProduct) {
+                // 编辑现有商品
+                editingProduct.name = name;
+                editingProduct.category = category;
+                editingProduct.price = price;
+                editingProduct.stock = stock;
+            } else {
+                // 添加新商品
+                const newId = Math.max(...products.map(p => p.id)) + 1;
+                products.push({
+                    id: newId,
+                    name,
+                    category,
+                    price,
+                    stock
+                });
+            }
+
+            filteredProducts = [...products];
+            productModal.classList.remove('show');
+            renderProducts();
+        });
+
+        // 分页导航
+        prevPage.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                renderProducts();
+            }
+        });
+
+        nextPage.addEventListener('click', () => {
+            const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderProducts();
+            }
+        });
+
+        // 初始化渲染
+        renderProducts();
+    </script>
+</body>
+</html>
